@@ -1,0 +1,40 @@
+{{#extends "base"}}
+{{#block "content"}}
+<h1>Employees</h1>
+<table class="table">
+    <tr>
+        <th>Name</th>
+        <th>Designation</th>
+        <th>Department</th>
+        <th>Date Joined</th>
+        <th>Supervisor</th>
+        <th>Ranking</th>
+        <th>Action</th>
+    </tr>
+    {{#each employees}}
+    <tr>
+        {{!-- 5.1 Creating the route to view all the customers --}}
+        {{!-- Obtaining the Results with Normal Tables --}}
+        {{!-- <td>{{first_name}}</td> --}}
+        {{!-- <td>{{last_name}}</td> --}}
+        {{!-- <td>{{rating}}</td> --}}
+        {{!-- <td>{{name}}</td> --}}
+
+        {{!-- 5.1 Creating the route to view all the customers --}}
+        {{!-- Obtaining the Results with Nested Tables --}}
+        <td>{{Employees.name}}</td>
+        <td>{{Employees.designation}}</td>
+        <td>{{Employees.department}}</td>
+        <td>{{Employees.date_joined}}</td>
+        <td>{{Supervisors.name}}</td>
+        <td>{{EmployeeSupervisor.ranking}}</td>
+        <td>
+                <a href="/employees/{{Employees.employee_id}}/{{Supervisors.supervisor_id}}/edit" class="btn btn-primary btn-sm">Edit</a>
+                <a href="/employees/{{Employees.employee_id}}/delete" class="btn btn-danger btn-sm">Delete</a>    
+        </td>
+        
+    </tr>
+    {{/each}}
+</table>
+{{/block}}
+{{/extends}}

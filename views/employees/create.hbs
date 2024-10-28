@@ -1,0 +1,33 @@
+{{#extends "base"}}
+{{#block "content"}}
+<h1>Add New Employee</h1>
+<form method="POST">
+    <div class="mb-3">
+        <label>Name</label>
+        <input type="text" class="form-control" name="name">
+    </div>
+    <div class="mb-3">
+        <label>Designation</label>
+        <input type="text" class="form-control" name="designation">
+    </div>
+    <div class="mb-3">
+        <label>Department</label>
+        <input type="text" class="form-control" name="department">
+    </div>
+    <div class="mb-3">
+        <label>Date Joined (YYYY-MM-DD format)</label>
+        <input type="text" class="form-control" name="date_joined">
+    </div>
+    <div class="mb-3">
+        <label>Supervisor</label>
+        <input type="text" class="form-control" name="supervisor_name">
+    </div>
+    <div class="mb-3">
+        <label>Ranking</label>
+        <input type="text" class="form-control" name="employee_supervisor_ranking">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Add Employee</button>
+</form>
+{{/block}}
+{{/extends}}
