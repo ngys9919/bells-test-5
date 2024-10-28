@@ -50,16 +50,18 @@ async function main() {
         // With Ascending sorting
         // 5.1 Creating the route to view all the customers
         // Obtaining the Results with Nested Tables
-        const [employees] = await connection.execute({
+        let [employees] = await connection.execute({
             'sql':`
             SELECT * from Employees
                 JOIN EmployeeSupervisor ON Employees.employee_id = EmployeeSupervisor.employee_id
-                JOIN Supervisors ON EmployeeSupervisor.supervisor_id = Supervisors.supervisor_id 
+                LEFT JOIN Supervisors ON EmployeeSupervisor.supervisor_id = Supervisors.supervisor_id 
                 ORDER BY Employees.name ASC;
             `,
             nestTables: true
 
         });
+
+        // let [employees] = await connection.execute( 'SELECT * FROM Employees JOIN EmployeeSupervisor ON Employees.employee_id = EmployeeSupervisor.employee_id LEFT JOIN Supervisors ON EmployeeSupervisor.supervisor_id = Supervisors.supervisor_id' );
 
         // JavaScript Date Output
         // Independent of input format, JavaScript will (by default) output dates in full text string format:
@@ -75,6 +77,22 @@ async function main() {
             // let formattedDate = date.toDateString();
             // e.date_joined = formattedDate;
         // }
+
+        
+        // Formatted date_joined for each employee into YYYY-MM-DD format
+        employees = employees.map(employee => {
+            // employee.date_joined = 'Mon Oct 28 2024 00:12:41 GMT+0800 (Singapore Standard Time)';
+            // console.log(employee);
+            // console.log(employee.date_joined);
+            let dateJoined = new Date(employee.Employees.date_joined); // assuming date_joined is the field name
+            // console.log(dateJoined);
+            let formattedDate = dateJoined.toISOString().split('T')[0]; // YYYY-MM-DD format
+            return { ...employee, date_joined: formattedDate };
+        });
+
+        // console.log(employees)
+
+        
 
         // Without sorting
         // let [customers] = await connection.execute('SELECT * FROM Customers INNER JOIN Companies ON Customers.company_id = Companies.company_id');
@@ -126,12 +144,35 @@ async function main() {
         let bindings = [name, designation, department, date_joined];
         let [result] = await connection.execute(query, bindings);
     
-        let query2 = 'INSERT INTO Supervisors (name) VALUES (?)';
-        let bindings2 = [supervisor_name];
-        let [result2] = await connection.execute(query2, bindings2);
+
+        let [supervisors] = await connection.execute('SELECT * from Supervisors');
+
+        let newSupervisor = false;
+        let newSupervisorId = supervisors.supervisor_id;
+        for (let s of supervisors) {
+            // console.log('Name of Supervisor List', s.name);
+            if (s.name !== supervisor_name) {
+                newSupervisor = true;      
+            } else {
+                newSupervisor = false;
+                newSupervisorId = s.supervisor_id;
+            }
+        }
+
+        if ((newSupervisor) && (supervisor_name != '')) {
+            let query2 = 'INSERT INTO Supervisors (name) VALUES (?)';
+            let bindings2 = [supervisor_name];
+            let [result2] = await connection.execute(query2, bindings2);
+            newSupervisorId = result2.insertId;
+        }
+        
+
+        if (supervisor_name == '') {
+            newSupervisorId = null;
+        }
 
         let newEmployeeId = result.insertId;
-        let newSupervisorId = result2.insertId;
+        
         
         let query3 = 'INSERT INTO EmployeeSupervisor (employee_id, supervisor_id, ranking) VALUES (?, ?, ?)';
         let bindings3 = [newEmployeeId, newSupervisorId, employee_supervisor_ranking];
@@ -160,9 +201,18 @@ async function main() {
         let [employees] = await connection.execute('SELECT * from Employees WHERE employee_id = ?', [req.params.employee_id]);
         let [employee_supervisors] = await connection.execute('SELECT * from EmployeeSupervisor WHERE employee_id = ?', [req.params.employee_id]);
     
-        let employee = employees[0];
+        // let employee = employees[0];
         let supervisor = supervisors[0];
         let employee_supervisor = employee_supervisors[0];
+
+        // Formatted date_joined for each employee into YYYY-MM-DD format
+        employees = employees.map(employee => {
+            let dateJoined = new Date(employee.date_joined); // assuming date_joined is the field name
+            let formattedDate = dateJoined.toISOString().split('T')[0]; // YYYY-MM-DD format
+            return { ...employee, date_joined: formattedDate };
+        });
+        
+        let employee = employees[0];
 
         res.render('employees/edit', {
             'employee': employee,
@@ -191,9 +241,32 @@ async function main() {
         let bindings = [name, designation, department, date_joined, req.params.employee_id];
         await connection.execute(query, bindings);
     
-        let query2 = 'UPDATE Supervisors SET name=? WHERE supervisor_id=?';
-        let bindings2 = [supervisor_name, req.params.supervisor_id];
-        await connection.execute(query2, bindings2);
+        let [supervisors] = await connection.execute('SELECT * from Supervisors');
+
+        let newSupervisor = false;
+        let newSupervisorId = supervisors.supervisor_id;
+        for (let s of supervisors) {
+            // console.log('Name of Supervisor List', s.name);
+            if (s.name !== supervisor_name) {
+                newSupervisor = true;      
+            } else {
+                newSupervisor = false;
+                newSupervisorId = s.supervisor_id;
+            }
+        }
+
+        if (newSupervisor) {
+            let query4 = 'INSERT INTO Supervisors (name) VALUES (?)';
+            let bindings4 = [supervisor_name];
+            let [result4] = await connection.execute(query4, bindings4);
+            newSupervisorId = result4.insertId;
+        } else {
+            let query2 = 'UPDATE Supervisors SET name=? WHERE supervisor_id=?';
+            let bindings2 = [supervisor_name, req.params.supervisor_id];
+            await connection.execute(query2, bindings2);
+        }
+        
+        
     
         let query3 = 'UPDATE EmployeeSupervisor SET ranking=? WHERE employee_id=?';
         let bindings3 = [supervisor_ranking, req.params.employee_id];
