@@ -61,7 +61,11 @@ async function main() {
 
         });
 
-        // let [employees] = await connection.execute( 'SELECT * FROM Employees JOIN EmployeeSupervisor ON Employees.employee_id = EmployeeSupervisor.employee_id LEFT JOIN Supervisors ON EmployeeSupervisor.supervisor_id = Supervisors.supervisor_id' );
+        // let [employees] = await connection.execute( `
+            // SELECT * FROM Employees 
+            // JOIN EmployeeSupervisor ON Employees.employee_id = EmployeeSupervisor.employee_id 
+            // LEFT JOIN Supervisors ON EmployeeSupervisor.supervisor_id = Supervisors.supervisor_id
+            // ` );
 
         // JavaScript Date Output
         // Independent of input format, JavaScript will (by default) output dates in full text string format:
@@ -144,6 +148,9 @@ async function main() {
         let bindings = [name, designation, department, date_joined];
         let [result] = await connection.execute(query, bindings);
     
+        if (supervisor_name == '') {
+            supervisor_name = null;
+        }
 
         let [supervisors] = await connection.execute('SELECT * from Supervisors');
 
@@ -151,15 +158,15 @@ async function main() {
         let newSupervisorId = supervisors.supervisor_id;
         for (let s of supervisors) {
             // console.log('Name of Supervisor List', s.name);
-            if (s.name !== supervisor_name) {
+            if ((s.name !== supervisor_name) && (supervisor_name != null)) {
                 newSupervisor = true;      
             } else {
                 newSupervisor = false;
-                newSupervisorId = s.supervisor_id;
+                break;
             }
         }
 
-        if ((newSupervisor) && (supervisor_name != '')) {
+        if (newSupervisor) {
             let query2 = 'INSERT INTO Supervisors (name) VALUES (?)';
             let bindings2 = [supervisor_name];
             let [result2] = await connection.execute(query2, bindings2);
@@ -167,7 +174,7 @@ async function main() {
         }
         
 
-        if (supervisor_name == '') {
+        if (supervisor_name == null) {
             newSupervisorId = null;
         }
 
@@ -195,15 +202,49 @@ async function main() {
         // })
     // })
 
+    let supervisor_idEdit = null;
+
     // 7. Update a Many to Many Relationship
-    app.get('/employees/:employee_id/:supervisor_id/edit', async (req, res) => {
-        let [supervisors] = await connection.execute('SELECT * from Supervisors WHERE supervisor_id = ?', [req.params.supervisor_id]);
+    app.get('/employees/:employee_id/edit', async (req, res) => {
+        
         let [employees] = await connection.execute('SELECT * from Employees WHERE employee_id = ?', [req.params.employee_id]);
         let [employee_supervisors] = await connection.execute('SELECT * from EmployeeSupervisor WHERE employee_id = ?', [req.params.employee_id]);
     
-        // let employee = employees[0];
-        let supervisor = supervisors[0];
         let employee_supervisor = employee_supervisors[0];
+
+        // let supervisor_id = null;
+        // supervisor_idEdit = employee_supervisor.supervisor_id;
+        // let [supervisors] = [];
+        // let supervisor = null;
+
+        // if (supervisor_idEdit != null) {
+            // [supervisors] = await connection.execute('SELECT * from Supervisors WHERE supervisor_id = ?', [supervisor_idEdit]);
+            // supervisor = supervisors[0];
+        // }
+        
+        // supervisor_idEdit = employee_supervisor.supervisor_id;
+        // [supervisors] = await connection.execute('SELECT * from Supervisors WHERE supervisor_id = ?', [supervisor_idEdit]);
+        // supervisor = supervisors[0];
+        // const [supervisors] = await connection.execute('SELECT * from Supervisors');
+        // console.log(supervisors);
+
+        let supervisor = {supervisor_id: null, name: null};
+        supervisor_idEdit = employee_supervisor.supervisor_id;
+        supervisor.supervisor_id = supervisor_idEdit;
+        let [supervisors] = await connection.execute('SELECT * from Supervisors');
+        for (let s of supervisors) {
+            // console.log('Name of Supervisor List', s.name);
+            if ((s.supervisor_id == supervisor_idEdit) ) {
+                supervisor.name = s.name;
+                break;      
+            } else {
+                supervisor.supervisor_id = null;
+                supervisor.name = null;
+            }
+        }
+
+        // let employee = employees[0];
+        
 
         // Formatted date_joined for each employee into YYYY-MM-DD format
         employees = employees.map(employee => {
@@ -234,35 +275,49 @@ async function main() {
     // })
     
     // 7. Update a Many to Many Relationship
-    app.post('/employees/:employee_id/:supervisor_id/edit', async (req, res) => {
+    app.post('/employees/:employee_id/edit', async (req, res) => {
         let {name, designation, department, date_joined, supervisor_name, supervisor_ranking} = req.body;
     
         let query = 'UPDATE Employees SET name=?, designation=?, department=?, date_joined=? WHERE employee_id=?';
         let bindings = [name, designation, department, date_joined, req.params.employee_id];
         await connection.execute(query, bindings);
     
+
         let [supervisors] = await connection.execute('SELECT * from Supervisors');
 
         let newSupervisor = false;
-        let newSupervisorId = supervisors.supervisor_id;
+        let newSupervisorId = null;
+        let supervisor_id = supervisor_idEdit;
+
+        if (supervisor_name == '') {
+            newSupervisorId = null;
+            supervisor_name = null;
+            supervisor_id = null;
+        }
+
         for (let s of supervisors) {
             // console.log('Name of Supervisor List', s.name);
-            if (s.name !== supervisor_name) {
+            if ((s.name != supervisor_name) && (supervisor_name != null)) {
                 newSupervisor = true;      
+            } else if (supervisor_name == null) {
+                newSupervisor = false;
+                supervisor_id = null;
+                break;
             } else {
                 newSupervisor = false;
-                newSupervisorId = s.supervisor_id;
+                supervisor_id =s.supervisor_id;
+                break;
             }
         }
 
-        if (newSupervisor) {
+        if ((newSupervisor) && (supervisor_name != null)) {
             let query4 = 'INSERT INTO Supervisors (name) VALUES (?)';
             let bindings4 = [supervisor_name];
             let [result4] = await connection.execute(query4, bindings4);
             newSupervisorId = result4.insertId;
-        } else {
+        } else if (supervisor_name != null) {
             let query2 = 'UPDATE Supervisors SET name=? WHERE supervisor_id=?';
-            let bindings2 = [supervisor_name, req.params.supervisor_id];
+            let bindings2 = [supervisor_name, supervisor_id];
             await connection.execute(query2, bindings2);
         }
         
@@ -272,6 +327,17 @@ async function main() {
         let bindings3 = [supervisor_ranking, req.params.employee_id];
         await connection.execute(query3, bindings3);
     
+        if (newSupervisorId == null) {
+            let query5 = 'UPDATE EmployeeSupervisor SET supervisor_id=? WHERE employee_id=?';
+            let bindings5 = [supervisor_id, req.params.employee_id];
+            await connection.execute(query5, bindings5);
+        } else {
+            let query6 = 'UPDATE EmployeeSupervisor SET supervisor_id=? WHERE employee_id=?';
+            let bindings6 = [newSupervisorId, req.params.employee_id];
+            await connection.execute(query6, bindings6);
+        }
+        
+
         res.redirect('/employees');
     });
     
