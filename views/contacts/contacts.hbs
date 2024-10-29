@@ -1,0 +1,33 @@
+{{#extends "nav"}}
+
+{{#block "title"}}BELLS-TEST-5{{/block}}
+
+{{#block "content"}}
+
+<h1>Contacts</h1>
+<table class="table">
+    <tr>
+        <th>Name</th>
+        <th>Address1</th>
+        <th>Address2</th>
+        <th>Address3</th>
+        <th>Mobile Phone</th>
+        <th>Home Number</th>
+        <th>Personal Email</th>
+    </tr>
+    {{#each employees}}
+    <tr>
+        {{!-- Creating the route to view all the employees with their contacts --}}
+        {{!-- Obtaining the Results with Normal Tables --}}
+        <td>{{name}}</td>
+        <td>{{address1}}</td>
+        <td>{{address2}}</td>
+        <td>{{address3}}</td>
+        <td>{{mobile_phone}}</td>
+        <td>{{home_phone}}</td>
+        <td>{{personal_email}}</td>
+    </tr>
+    {{/each}}
+</table>        
+{{/block}}
+{{/extends}}

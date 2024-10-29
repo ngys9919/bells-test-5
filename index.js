@@ -53,7 +53,176 @@ async function main() {
     })
 
     app.get('/', (req,res) => {
-        res.send('Hello, World!');
+        // res.send('Hello, World!');
+        
+        // The 'res' response to the client can only sent once.
+        // Cannot set headers after they are sent to the client.
+        const data = {
+            title: "Backend with MySQL and Express!",
+            name: 'Ng Yew Seng',
+            email: 'ngys9919@yahoo.com'
+        };
+
+        const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <title>BELLS-TEST-5</title>
+        </head>
+        <style>
+            .container { 
+                max-width: 720px; /* Maximum width of the container */ 
+                margin: 0 auto; /* Center the container */ 
+                padding: 20px; 
+                background-color: lightgrey; 
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); 
+                transition: margin-left 0.3s; /* Smooth transition for margin-left */
+                overflow: scroll; // Handle Overflow 
+            } 
+            .tab {
+                display: inline-block;
+                margin-left: 15%;  /* for e.g: value = 40px*/
+                // position: relative;
+                // left: 20px;
+            }
+            .tab4 
+            {
+                tab-size: 8;
+            }
+  
+            /* Responsive margin-left effect */
+  
+            /* Extra small devices (phones, 600px and down) */
+            @media only screen and (max-width: 600px) {
+                .container {
+                    max-width: 420px; /* Maximum width of the container */
+                    margin-left:1%;
+                }
+            }
+  
+            /* Small devices (portrait tablets and large phones, 600px and up) */
+            @media only screen and (min-width: 600px) {
+                .container {
+                    max-width: 600px; /* Maximum width of the container */
+                    margin-left:5%;
+                } 
+            }
+  
+            /* Medium devices (landscape tablets, 768px and up) */
+            @media only screen and (min-width: 768px) {
+                .container {
+                    max-width: 600px; /* Maximum width of the container */
+                    margin-left:10%;
+                }
+            }
+            
+            /* Large devices (laptops/desktops, 992px and up) */
+            @media only screen and (min-width: 992px) {
+                .container {
+                    max-width: 720px; /* Maximum width of the container */
+                    margin-left:25%;
+                }
+            }
+  
+            /* Extra large devices (large laptops and desktops, 1200px and up) */
+            @media only screen and (min-width: 1200px) {
+                .container {
+                    max-width: 720px; /* Maximum width of the container */
+                    margin-left:25%;
+                }
+            }
+        </style>
+        <body>
+        <div>
+            <div style="text-align: center;">
+                <h1 style="text-decoration: underline;">Title: ${data.title}</h1>
+                <h3>Name: ${data.name}</h3>
+                &NewLine;
+                <p style="font-size: 15pt; color: blue;">Email: ${data.email}</p>
+            </div>
+            </br>
+            <div class="container">
+                <img src="img/eds-database.png" alt="database: company_xyz">
+                <br/>
+                <h3>server url:<h3>
+                <h4>3000-ngys9919-bellstest4-ow3nfwhphp2.ws-us116.gitpod.io</h4>
+                <b>/: &emsp; root route</b>
+                <h3>format: </h3>
+                <pre class="tab4">route implemented:    form-http method, access control, description</pre>
+                <h3>implementations: </h3>
+                <pre class="tab4">/taskforce    GET, PUBLIC, This route can get the complete taskforce list.</pre>
+                <pre class="tab4">/supervisor  GET, PUBLIC, This route can get the complete supervisor list.</pre>
+                <pre class="tab4">/contact     GET, PUBLIC, This route get the complete contact list.</pre>
+                <pre class="tab4">/employees    GET, PUBLIC, This route can get the complete employee list.</pre>
+                <pre class="tab4">/employees/create     GET,POST, PUBLIC, This route can create an employee record with the 
+                <wbr>provided info using input form format, with fields name, designation, department, date_joined,
+                <wbr>supervisor and ranking, ready for submission.</pre>
+                <pre class="tab4">/employees/:employee_id/edit    GET,POST PUBLIC, This route can retrieve the specified employee
+                <wbr>and display the detailed info on the employee with the provision of employee_id using input form
+                <wbr>format, with fields name, designation, department, date_joined, supervisor and ranking,
+                <wbr>ready for updating.</pre>
+                <pre class="tab4">/employees/:employee_id/delete      GET,POST, PUBLIC, This route can delete the employee record
+                <wbr>with the provision of employee_id with a confirmation dialog box.</pre>
+            </div>
+        </div>
+        </body>
+        </html>
+  `     ;
+  
+        res.header('Content-Type', 'text/html');
+        res.send(html);
+
+    });
+
+    // Implementing Read
+    // Implement a Route to Show Taskforces Records
+    app.get("/taskforce", async function(req,res){
+        // With Ascending sorting
+        // Obtaining the Results with Nested Tables
+        let [employees] = await connection.execute({
+            'sql': `
+            SELECT * FROM Employees 
+            JOIN EmployeeTaskforce ON Employees.employee_id = EmployeeTaskforce.employee_id 
+            JOIN Taskforces ON EmployeeTaskforce.taskforce_id = Taskforces.taskforce_id
+            ORDER BY Employees.name ASC
+            `,
+            nestTables: true
+         });
+
+        res.render('taskforces/taskforces', {
+            'employees': employees
+        });
+    });
+
+    // Implementing Read
+    // Implement a Route to Show Supervisors Records
+    app.get("/supervisor", async function(req,res){
+        // With Ascending sorting
+        // Obtaining the Results with Nested Tables
+        let [employees] = await connection.execute({
+            'sql': `
+            SELECT * FROM Employees 
+            JOIN EmployeeSupervisor ON Employees.employee_id = EmployeeSupervisor.employee_id 
+            LEFT JOIN Supervisors ON EmployeeSupervisor.supervisor_id = Supervisors.supervisor_id
+            ORDER BY Employees.name ASC
+            `,
+            nestTables: true
+         });
+
+        // console.log(employees);
+        res.render('supervisors/supervisors', {
+            'employees': employees
+        });
+    });
+
+    // Implementing Read
+    // Implement a Route to Show Contacts Records
+    app.get("/contact", async function(req,res){
+        // With Ascending sorting
+        let [employees] = await connection.execute('SELECT * FROM Employees INNER JOIN Contacts ON Employees.employee_id = Contacts.employee_id ORDER BY name ASC');
+        res.render('contacts/contacts', {
+            'employees': employees
+        });
     });
 
     // Implementing Read
@@ -70,7 +239,6 @@ async function main() {
                 ORDER BY Employees.name ASC;
             `,
             nestTables: true
-
         });
 
         // let [employees] = await connection.execute( `
@@ -143,12 +311,13 @@ async function main() {
         let [supervisors] = await connection.execute('SELECT * from Supervisors');
 
         let newSupervisor = false;
-        let newSupervisorId = supervisors.supervisor_id;
+        let newSupervisorId = null;
         for (let s of supervisors) {
             if ((s.name !== supervisor_name) && (supervisor_name != null)) {
                 newSupervisor = true;      
             } else {
                 newSupervisor = false;
+                newSupervisorId = s.supervisor_id;
                 break;
             }
         }
@@ -219,7 +388,7 @@ async function main() {
         });
 
         let employee = employees[0];
-        console.log(employee);
+        // console.log(employee);
 
         res.render('employees/edit', {
             'employee': employee,

@@ -1,0 +1,25 @@
+{{#extends "nav"}}
+
+{{#block "title"}}BELLS-TEST-5{{/block}}
+
+{{#block "content"}}
+
+<h1>Supervisors</h1>
+<table class="table">
+    <tr> 
+        <th>Employee Name</th>
+        <th>Ranking</th>
+        <th>Supervisor Name</th>
+    </tr>
+    {{#each employees}}
+    <tr>
+        {{!-- Creating the route to view all the employees with their contacts --}}
+        {{!-- Obtaining the Results with Nested Tables --}}
+        <td>{{Employees.name}}</td>
+        <td>{{EmployeeSupervisor.ranking}}</td>
+        <td>{{Supervisors.name}}</td>
+    </tr>
+    {{/each}}
+</table>        
+{{/block}}
+{{/extends}}

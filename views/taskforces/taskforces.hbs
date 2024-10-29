@@ -1,0 +1,25 @@
+{{#extends "nav"}}
+
+{{#block "title"}}BELLS-TEST-5{{/block}}
+
+{{#block "content"}}
+
+<h1>Taskforces</h1>
+<table class="table">
+    <tr>
+        <th>Taskforce</th> 
+        <th>Name</th>
+        <th>Role</th>
+    </tr>
+    {{#each employees}}
+    <tr>
+        {{!-- Creating the route to view all the employees with their contacts --}}
+        {{!-- Obtaining the Results with Normal Tables --}}
+        <td>{{Taskforces.taskforce_name}}</td>
+        <td>{{Employees.name}}</td>
+        <td>{{EmployeeTaskforce.role}}</td>
+    </tr>
+    {{/each}}
+</table>        
+{{/block}}
+{{/extends}}
