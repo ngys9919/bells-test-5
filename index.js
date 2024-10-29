@@ -21,6 +21,29 @@ helpers({
 
 let connection;
 
+function convertUTCDateToLocalDate(date) {
+    var newDate = new Date(date.getTime()+date.getTimezoneOffset()*60*1000);
+    newDate.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+    return newDate;   
+}
+
+const formatDate_YYYYMMDD = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+};
+
+const formatDate_DDMMYYYY = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${day}-${month}-${year}`;
+};
+
+
 async function main() {
     connection = await createConnection({
         'host': process.env.DB_HOST,
@@ -33,22 +56,11 @@ async function main() {
         res.send('Hello, World!');
     });
 
+    // Implementing Read
+    // Implement a Route to Show All Employees Records
     app.get('/employees', async (req, res) => {
 
-        // Without sorting
-        // 5.1 Creating the route to view all the customers
-        // Obtaining the Results with Nested Tables
-        // const [customers] = await connection.execute({
-            // 'sql':`
-            // SELECT * from Customers
-                // JOIN Companies ON Customers.company_id = Companies.company_id;
-            // `,
-            // nestTables: true
-
-        // });
-
         // With Ascending sorting
-        // 5.1 Creating the route to view all the customers
         // Obtaining the Results with Nested Tables
         let [employees] = await connection.execute({
             'sql':`
@@ -76,13 +88,6 @@ async function main() {
 
         // Output: Mon Oct 28 2024
 
-        // for (let e of employees) {
-            // const date = new Date(e.date_joined);
-            // let formattedDate = date.toDateString();
-            // e.date_joined = formattedDate;
-        // }
-
-        
         // Formatted date_joined for each employee into YYYY-MM-DD format
         employees = employees.map(employee => {
             // employee.date_joined = 'Mon Oct 28 2024 00:12:41 GMT+0800 (Singapore Standard Time)';
@@ -90,34 +95,28 @@ async function main() {
             // console.log(employee.date_joined);
             let dateJoined = new Date(employee.Employees.date_joined); // assuming date_joined is the field name
             // console.log(dateJoined);
-            let formattedDate = dateJoined.toISOString().split('T')[0]; // YYYY-MM-DD format
+            // let formattedDate = dateJoined.toISOString().split('T')[0]; // YYYY-MM-DD ISO format but not local format
+            
+            // var formattedDate = convertUTCDateToLocalDate(new Date(dateJoined));
+            // convert UTC date/time to DD-MM-YYYY local format
+            let formattedDate = formatDate_DDMMYYYY(dateJoined);
+
+            // Display the date/time based on the client local setting:
+            // formattedDate = formattedDate.toLocaleString();
+            // Display the date only based on the client local setting:
+            // formattedDate = formattedDate.toLocaleDateString();
             return { ...employee, date_joined: formattedDate };
         });
 
         // console.log(employees)
 
-        
-
-        // Without sorting
-        // let [customers] = await connection.execute('SELECT * FROM Customers INNER JOIN Companies ON Customers.company_id = Companies.company_id');
-        // With Ascending sorting
-        // let [customers] = await connection.execute('SELECT * FROM Customers INNER JOIN Companies ON Customers.company_id = Companies.company_id' ORDER BY first_name ASC);
         res.render('employees/index', {
             'employees': employees
         })
     })
     
-    // 5.0 Coding the CRUD for an Entity with one to many relationship
-    // Creating One to Many Relationship
-    // 5.2 Create a route to display a form to add new customer
-    // app.get('/customers/create', async(req,res)=>{
-        // let [companies] = await connection.execute('SELECT * from Companies');
-        // res.render('customers/create', {
-            // 'companies': companies
-        // })
-    // })
-    
-    // 6. Creating Many to Many Relationship
+    // Implementing Create
+    // Implement a Route to Show an Input Form
     app.get('/employees/create', async(req,res)=>{
         let [supervisors] = await connection.execute('SELECT * from Supervisors');
         let [employees] = await connection.execute('SELECT * from Employees');
@@ -129,19 +128,8 @@ async function main() {
         })
     })
     
-    
-    // 5.0 Coding the CRUD for an Entity with one to many relationship
-    // Creating One to Many Relationship
-    // 5.3 Processing the Form to add a new Customer
-    // app.post('/customers/create', async(req,res)=>{
-        // let {first_name, last_name, rating, company_id} = req.body;
-        // let query = 'INSERT INTO Customers (first_name, last_name, rating, company_id) VALUES (?, ?, ?, ?)';
-        // let bindings = [first_name, last_name, rating, company_id];
-        // await connection.execute(query, bindings);
-        // res.redirect('/customers');
-    // })
-    
-    // 6. Creating Many to Many Relationship
+    // Implementing Create
+    // Process the Create
     app.post('/employees/create', async(req,res)=>{
         let {name, designation, department, date_joined, supervisor_name, employee_supervisor_ranking} = req.body;
         let query = 'INSERT INTO Employees (name, designation, department, date_joined) VALUES (?, ?, ?, ?)';
@@ -157,7 +145,6 @@ async function main() {
         let newSupervisor = false;
         let newSupervisorId = supervisors.supervisor_id;
         for (let s of supervisors) {
-            // console.log('Name of Supervisor List', s.name);
             if ((s.name !== supervisor_name) && (supervisor_name != null)) {
                 newSupervisor = true;      
             } else {
@@ -189,22 +176,10 @@ async function main() {
     })
     
     
-    // 5.0 Coding the CRUD for an Entity with one to many relationship
-    // Update a One to Many Relationship
-    // 5.4 Display a Form to Update a specific Customer
-    // app.get('/customers/:customer_id/edit', async (req, res) => {
-        // let [customers] = await connection.execute('SELECT * from Customers WHERE customer_id = ?', [req.params.customer_id]);
-        // let [companies] = await connection.execute('SELECT * from Companies');
-        // let customer = customers[0];
-        // res.render('customers/edit', {
-            // 'customer': customer,
-            // 'companies': companies
-        // })
-    // })
-
     let supervisor_idEdit = null;
 
-    // 7. Update a Many to Many Relationship
+    // Implementing Update
+    // Implement a Route to Show an Edit Form
     app.get('/employees/:employee_id/edit', async (req, res) => {
         
         let [employees] = await connection.execute('SELECT * from Employees WHERE employee_id = ?', [req.params.employee_id]);
@@ -212,28 +187,11 @@ async function main() {
     
         let employee_supervisor = employee_supervisors[0];
 
-        // let supervisor_id = null;
-        // supervisor_idEdit = employee_supervisor.supervisor_id;
-        // let [supervisors] = [];
-        // let supervisor = null;
-
-        // if (supervisor_idEdit != null) {
-            // [supervisors] = await connection.execute('SELECT * from Supervisors WHERE supervisor_id = ?', [supervisor_idEdit]);
-            // supervisor = supervisors[0];
-        // }
-        
-        // supervisor_idEdit = employee_supervisor.supervisor_id;
-        // [supervisors] = await connection.execute('SELECT * from Supervisors WHERE supervisor_id = ?', [supervisor_idEdit]);
-        // supervisor = supervisors[0];
-        // const [supervisors] = await connection.execute('SELECT * from Supervisors');
-        // console.log(supervisors);
-
         let supervisor = {supervisor_id: null, name: null};
         supervisor_idEdit = employee_supervisor.supervisor_id;
         supervisor.supervisor_id = supervisor_idEdit;
         let [supervisors] = await connection.execute('SELECT * from Supervisors');
         for (let s of supervisors) {
-            // console.log('Name of Supervisor List', s.name);
             if ((s.supervisor_id == supervisor_idEdit) ) {
                 supervisor.name = s.name;
                 break;      
@@ -245,15 +203,23 @@ async function main() {
 
         // let employee = employees[0];
         
-
         // Formatted date_joined for each employee into YYYY-MM-DD format
         employees = employees.map(employee => {
-            let dateJoined = new Date(employee.date_joined); // assuming date_joined is the field name
-            let formattedDate = dateJoined.toISOString().split('T')[0]; // YYYY-MM-DD format
-            return { ...employee, date_joined: formattedDate };
+        // console.log(employees);
+        let dateJoined = new Date(employee.date_joined); // assuming date_joined is the field name
+        // console.log(dateJoined);
+    
+        // convert UTC date/time to YYYY-MM-DD local format
+        // const currentDate = new Date();
+        // console.log(formatDate(currentDate));
+        let formattedDate = formatDate_YYYYMMDD(dateJoined);
+        // console.log(formattedDate);
+
+        return { ...employee, date_joined: formattedDate };
         });
-        
+
         let employee = employees[0];
+        console.log(employee);
 
         res.render('employees/edit', {
             'employee': employee,
@@ -262,19 +228,8 @@ async function main() {
         })
     });
     
-    
-    // 5.0 Coding the CRUD for an Entity with one to many relationship
-    // Update a One to Many Relationship
-    // 5.5 Processing the Update
-    // app.post('/customers/:customer_id/edit', async (req, res) => {
-        // let {first_name, last_name, rating, company_id} = req.body;
-        // let query = 'UPDATE Customers SET first_name=?, last_name=?, rating=?, company_id=? WHERE customer_id=?';
-        // let bindings = [first_name, last_name, rating, company_id, req.params.customer_id];
-        // await connection.execute(query, bindings);
-        // res.redirect('/customers');
-    // })
-    
-    // 7. Update a Many to Many Relationship
+    // Implementing Update
+    // Process the Update
     app.post('/employees/:employee_id/edit', async (req, res) => {
         let {name, designation, department, date_joined, supervisor_name, supervisor_ranking} = req.body;
     
@@ -296,7 +251,6 @@ async function main() {
         }
 
         for (let s of supervisors) {
-            // console.log('Name of Supervisor List', s.name);
             if ((s.name != supervisor_name) && (supervisor_name != null)) {
                 newSupervisor = true;      
             } else if (supervisor_name == null) {
@@ -337,13 +291,12 @@ async function main() {
             await connection.execute(query6, bindings6);
         }
         
-
         res.redirect('/employees');
     });
     
     
-    // 8. Implementing Delete
-    // 8.1 Implement a Route to Show a Confirmation Form
+    // Implementing Delete
+    // Implement a Route to Show a Confirmation Form
     app.get('/employees/:employee_id/delete', async function(req,res){
         // display a confirmation form 
         const [employees] = await connection.execute(
@@ -357,8 +310,8 @@ async function main() {
 
     })
 
-    // 8. Implementing Delete
-    // 8.2 Process the Delete
+    // Implementing Delete
+    // Process the Delete
     app.post('/employees/:employee_id/delete', async function(req, res){
         await connection.execute(`DELETE FROM EmployeeSupervisor WHERE employee_id = ?`, [req.params.employee_id]);
         await connection.execute(`DELETE FROM Employees WHERE employee_id = ?`, [req.params.employee_id]);
