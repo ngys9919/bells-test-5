@@ -52,6 +52,8 @@ async function main() {
         'password': process.env.DB_PASSWORD
     })
 
+    console.log("MySQL Database connected!");
+
     app.get('/', (req,res) => {
         // res.send('Hello, World!');
         
@@ -150,9 +152,13 @@ async function main() {
                 <h3>format: </h3>
                 <pre class="tab4">route implemented:    form-http method, access control, description</pre>
                 <h3>implementations: </h3>
-                <pre class="tab4">/taskforce    GET, PUBLIC, This route can get the complete taskforce list.</pre>
-                <pre class="tab4">/supervisor  GET, PUBLIC, This route can get the complete supervisor list.</pre>
-                <pre class="tab4">/contact     GET, PUBLIC, This route get the complete contact list.</pre>
+                <pre class="tab4">/taskforce    GET, PUBLIC, This route can get the complete taskforce list and 
+                <wbr>perform searches using query string with members, with wildcard expression (starting %, 
+                <wbr>ending %, in-between % %, exact match), implicit case-insensitive.</pre>
+                <pre class="tab4">/supervisor  GET, PUBLIC, This route can get the complete supervisor list and
+                <wbr>perform searches using query string with name, with auto-insertion of wild card (in-between % %), 
+                <wbr>case insensitive.</pre>
+                <pre class="tab4">/contact     GET, PUBLIC, This route get the complete contact list and has no search.</pre>
                 <pre class="tab4">/employees    GET, PUBLIC, This route can get the complete employee list.</pre>
                 <pre class="tab4">/employees/create     GET,POST, PUBLIC, This route can create an employee record with the 
                 <wbr>provided info using input form format, with fields name, designation, department, date_joined,
@@ -174,47 +180,143 @@ async function main() {
 
     });
 
+    //Exact Search
+    // Search by members: https://<server url>/taskforce?members=Jon Tan -> Jon%20%Tan
+    // Search by members: https://<server url>/taskforce?members=Alex%20CHUA
+
+    //End-with Search
+    // Search by members: https://<server url>/taskforce?members=%nG
+
+    //Start-with Search
+    // Search by members: https://<server url>/taskforce?members=A%
+
+    //Contain-with Search
+    // Search by members: https://<server url>/taskforce?members=%AnDREW%
+
     // Implementing Read
     // Implement a Route to Show Taskforces Records
     app.get("/taskforce", async function(req,res){
-        // With Ascending sorting
-        // Obtaining the Results with Nested Tables
-        let [employees] = await connection.execute({
-            'sql': `
-            SELECT * FROM Employees 
-            JOIN EmployeeTaskforce ON Employees.employee_id = EmployeeTaskforce.employee_id 
-            JOIN Taskforces ON EmployeeTaskforce.taskforce_id = Taskforces.taskforce_id
-            ORDER BY Employees.name ASC
-            `,
-            nestTables: true
-         });
+        // this is the same as let members = req.query.members
+        // syntax: object destructuring
+        let { members } = req.query;
+
+        // console.log(members);
+
+        let criteria = null;
+
+        if (members) {
+            criteria = "'" + members + "'";
+        }
+
+        // console.log(criteria);
+
+        let [employees] = [];
+
+        if (criteria) {
+            // Without sorting, but with search
+            // Obtaining the Results with Nested Tables
+            [employees] = await connection.execute({
+                'sql': (`
+                SELECT * FROM Employees 
+                JOIN EmployeeTaskforce ON Employees.employee_id = EmployeeTaskforce.employee_id 
+                JOIN Taskforces ON EmployeeTaskforce.taskforce_id = Taskforces.taskforce_id
+                WHERE Employees.name LIKE ${criteria}
+                `),
+                nestTables: true
+            });
+        } else {
+            // With Ascending sorting, but without search
+            // Obtaining the Results with Nested Tables
+            [employees] = await connection.execute({
+                'sql': `
+                SELECT * FROM Employees 
+                JOIN EmployeeTaskforce ON Employees.employee_id = EmployeeTaskforce.employee_id 
+                JOIN Taskforces ON EmployeeTaskforce.taskforce_id = Taskforces.taskforce_id
+                ORDER BY Employees.name ASC
+                `,
+                nestTables: true
+            });
+        }
+        
+        // console.log(employees);
 
         res.render('taskforces/taskforces', {
             'employees': employees
         });
     });
 
+    //Contain-with Search
+    // Search by name: https://<server url>/supervisor?name=jon%20tan
+    
     // Implementing Read
     // Implement a Route to Show Supervisors Records
     app.get("/supervisor", async function(req,res){
-        // With Ascending sorting
-        // Obtaining the Results with Nested Tables
-        let [employees] = await connection.execute({
-            'sql': `
-            SELECT * FROM Employees 
-            JOIN EmployeeSupervisor ON Employees.employee_id = EmployeeSupervisor.employee_id 
-            LEFT JOIN Supervisors ON EmployeeSupervisor.supervisor_id = Supervisors.supervisor_id
-            ORDER BY Employees.name ASC
-            `,
-            nestTables: true
-         });
+        // this is the same as let name = req.query.name;
+        // syntax: object destructuring
+        let { name } = req.query;
+
+        let criteria = null;
+
+        if (name) {
+            criteria = "'%" + name + "%'";
+        }
+
+        console.log(criteria);
+
+        // Obtaining the Results with Normal Tables
+        // let [employees] = await connection.execute(`
+            // SELECT e.name, es.ranking, s.name
+            // FROM Employees AS e
+            // JOIN EmployeeSupervisor AS es ON e.employee_id = es.employee_id
+            // LEFT JOIN Supervisors AS s ON es.supervisor_id = s.supervisor_id
+            // WHERE s.name LIKE ?
+            // `, [criteria]
+        // );
+
+        let [employees] = [];
+
+        
+        if (criteria) {
+            // Without sorting, but with search
+            // Obtaining the Results with Nested Tables
+            [employees] = await connection.execute({
+                'sql': (`
+                SELECT * FROM Employees 
+                JOIN EmployeeSupervisor ON Employees.employee_id = EmployeeSupervisor.employee_id 
+                LEFT JOIN Supervisors ON EmployeeSupervisor.supervisor_id = Supervisors.supervisor_id
+                WHERE Supervisors.name LIKE ${criteria}
+                `),
+                nestTables: true
+            });
+        } else {
+            // With Ascending sorting, but without search
+            // Obtaining the Results with Nested Tables
+            [employees] = await connection.execute({
+                'sql': `
+                SELECT * FROM Employees 
+                JOIN EmployeeSupervisor ON Employees.employee_id = EmployeeSupervisor.employee_id 
+                LEFT JOIN Supervisors ON EmployeeSupervisor.supervisor_id = Supervisors.supervisor_id
+                ORDER BY Employees.name ASC
+                `,
+                nestTables: true
+            });
+        }
+        
+        // let [employees] = await connection.execute('SELECT * FROM Employees WHERE name LIKE ?', [criteria]);
+
+        // let employee = employees[0];
+
+        // console.log(employee);
 
         // console.log(employees);
+
         res.render('supervisors/supervisors', {
             'employees': employees
         });
     });
 
+    // No Search for contact
+    
     // Implementing Read
     // Implement a Route to Show Contacts Records
     app.get("/contact", async function(req,res){

@@ -185,11 +185,11 @@ The following routes are implemented with its related features:
 
 For database access:
 
-1. /taskforce&ensp;&ensp;&ensp;&ensp; GET, PUBLIC, This route can get the complete taskforce list.
+1. /taskforce&ensp;&ensp;&ensp;&ensp; GET, PUBLIC, This route can get the complete taskforce list and perform searches using query string with members, with wildcard expression (starting %, ending %, in-between % %, exact match), implicit case-insensitive.
 
-2. /supervisor&ensp;&ensp;&ensp;&ensp; GET, PUBLIC, This route can get the complete supervisor list.
+2. /supervisor&ensp;&ensp;&ensp;&ensp; GET, PUBLIC, This route can get the complete supervisor list and perform searches using query string with name, with auto-insertion of wild card (in-between % %), case insensitive.
 
-3. /contact&ensp;&ensp;&ensp;&ensp; GET, PUBLIC, This route get the complete contact list.
+3. /contact&ensp;&ensp;&ensp;&ensp; GET, PUBLIC, This route get the complete contact list and has no search.
 
 4. /employees&ensp;&ensp;&ensp;&ensp; GET, PUBLIC, This route can get the complete employee list.
 
@@ -210,20 +210,43 @@ For testing of GET/POST routes, we could just use the web browser since the fron
 
 \<port\> = 3000
 
-\<server url\> = 3000-ngys9919-bellstest4-ow3nfwhphp2.ws-us116.gitpod.io
+\<server url\> = 
 
 1. Using Test-Cases
 
->>1.1 Test the read function on database tables:
+>>1.1  Test the search engine function: Run your browser, test with the following query strings:
 
-   For taskforce collection: https://<server url>/taskforce\
-   For supervisor collection: https://<server url>/supervisor\
-   For contact collection: https://<server url>/contact\
-   For employee collection: https://<server url>/employees
+   For taskforce table:\
+   //Exact Search\
+   Search by members: https://<server url>/taskforce?members=Jon Tan\
+   Search by members: https://<server url>/taskforce?members=Alex%20CHUA
 
->>1.2 Test the CRUD functions:
+   //End-with Search\
+   Search by members: https://<server url>/taskforce?members=%nG
 
->>>1.2.1 Test the create function: To test the create route, first we goto https://<server url>/employees/create and in the Add New Employee form, fill the input entries with the following new info and click Add Employee button:
+   //Start-with Search\
+   Search by members: https://<server url>/taskforce?members=A%
+
+   //Contain-with Search\
+   Search by members: https://<server url>/taskforce?members=%AnDREW%
+
+   For supervisor table:\
+   //Contain-with Search\
+   Search by name: https://<server url>/supervisor?name=jon%20tan
+
+   For contact table:\
+   No Search for contact.
+
+>>1.2 Test the read function on database tables:
+
+   For taskforce table: https://<server url>/taskforce\
+   For supervisor table: https://<server url>/supervisor\
+   For contact table: https://<server url>/contact\
+   For employee table: https://<server url>/employees
+
+>>1.3 Test the CRUD functions:
+
+>>>1.3.1 Test the create function: To test the create route, first we goto https://<server url>/employees/create and in the Add New Employee form, fill the input entries with the following new info and click Add Employee button:
 
 ```
 Name: Hardy Fool
@@ -233,9 +256,9 @@ Date Joined: 9-8-2024
 Supervisor: Jon Tan
 Ranking: 
 ```
->>>1.2.2 Test the read function: To test the read route, first we goto https://<server url>/employees and the complete employees list will be displayed in tabular format, with Action column for built-in buttons for Edit and Delete functionalities.
+>>>1.3.2 Test the read function: To test the read route, first we goto https://<server url>/employees and the complete employees list will be displayed in tabular format, with Action column for built-in buttons for Edit and Delete functionalities.
 
->>>1.2.3 Test the update function: To test the update route, first we goto https://<server url>/employees and click on the Edit button on the particular employee row that we want to modify. In the Edit Employee form, make modification with the following changes and click Update Employee button:
+>>>1.3.3 Test the update function: To test the update route, first we goto https://<server url>/employees and click on the Edit button on the particular employee row that we want to modify. In the Edit Employee form, make modification with the following changes and click Update Employee button:
 
 ```
 Name: Andrew Ng
@@ -245,7 +268,7 @@ Date Joined: 22-7-1994
 Supervisor: Alex Chua
 Ranking: B+
 ```
->>>1.2.4 Test the delete function: To test the delete route, first we goto https://<server url>/employees and click on the Delete button on the particular employee row that we want to delete. In the Delete Employee form, click Confirm button to proceed with deletion and Cancel button to change our mind.
+>>>1.3.4 Test the delete function: To test the delete route, first we goto https://<server url>/employees and click on the Delete button on the particular employee row that we want to delete. In the Delete Employee form, click Confirm button to proceed with deletion and Cancel button to change our mind.
 
 
 <!-- Heading level 2 -->
