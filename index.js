@@ -220,8 +220,30 @@ async function main() {
     app.get("/contact", async function(req,res){
         // With Ascending sorting
         let [employees] = await connection.execute('SELECT * FROM Employees INNER JOIN Contacts ON Employees.employee_id = Contacts.employee_id ORDER BY name ASC');
+        
+        // res.render('contacts/contacts_all', {
+        // res.render('contacts/contacts_each', {
         res.render('contacts/contacts', {
             'employees': employees
+        });
+    });
+
+    app.post("/contact", async function(req,res){
+        let {employee_id_selected} = req.body;
+        // With Ascending sorting
+        let [employees] = await connection.execute('SELECT * FROM Employees INNER JOIN Contacts ON Employees.employee_id = Contacts.employee_id ORDER BY name ASC');
+        
+        let [employee_selected] = await connection.execute('SELECT * FROM Employees WHERE employee_id = ?', [employee_id_selected]);
+
+        let [relatedContacts] = await connection.execute('SELECT * FROM Contacts WHERE employee_id = ?', [employee_id_selected]);
+
+        let employee = employee_selected[0];
+        let relatedContact = relatedContacts[0];
+
+        res.render('contacts/contacts_each', {
+            'employees': employees,
+            'employee': employee,
+            'relatedContact': relatedContact
         });
     });
 

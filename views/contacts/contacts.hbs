@@ -5,6 +5,21 @@
 {{#block "content"}}
 
 <h1>Contacts</h1>
+<form method="POST">
+<div class="mb-3">
+    <label>Employees</label>
+    <select name="employee_id_selected" class="form-control">
+        {{#each employees}}
+        <option value="{{employee_id}}"
+        {{#inArray employee_id }}selected{{/inArray}}>
+            Name: {{name}}  Department: {{department}}
+        </option>
+        {{/each}}
+    </select>
+</div>
+
+<button type="submit" class="btn btn-primary">Please select an employee for his/her contacts: </button>
+
 <table class="table">
     <tr>
         <th>Name</th>
@@ -15,19 +30,7 @@
         <th>Home Number</th>
         <th>Personal Email</th>
     </tr>
-    {{#each employees}}
-    <tr>
-        {{!-- Creating the route to view all the employees with their contacts --}}
-        {{!-- Obtaining the Results with Normal Tables --}}
-        <td>{{name}}</td>
-        <td>{{address1}}</td>
-        <td>{{address2}}</td>
-        <td>{{address3}}</td>
-        <td>{{mobile_phone}}</td>
-        <td>{{home_phone}}</td>
-        <td>{{personal_email}}</td>
-    </tr>
-    {{/each}}
-</table>        
+</table>
+</form>        
 {{/block}}
 {{/extends}}
