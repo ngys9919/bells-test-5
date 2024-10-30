@@ -4,6 +4,15 @@ const wax = require('wax-on');
 require('dotenv').config();
 const { createConnection } = require('mysql2/promise');
 
+// List of HTTP status codes Implemented
+const statusCode_200_OK = 200;
+const statusCode_201_Created = 201;
+const statusCode_400_Bad_Request = 400;
+const statusCode_401_Unauthorized = 401;
+const statusCode_403_Forbidden = 403;
+const statusCode_404_Not_Found = 404;
+const statusCode_500_Internal_Server_Error = 500;
+
 let app = express();
 app.set('view engine', 'hbs');
 app.use(express.static('public'));
@@ -147,7 +156,7 @@ async function main() {
                 <img src="img/eds-database.png" alt="database: company_xyz">
                 <br/>
                 <h3>server url:<h3>
-                <h4>3000-ngys9919-bellstest4-ow3nfwhphp2.ws-us116.gitpod.io</h4>
+                <h4></h4>
                 <b>/: &emsp; root route</b>
                 <h3>format: </h3>
                 <pre class="tab4">route implemented:    form-http method, access control, description</pre>
@@ -196,6 +205,7 @@ async function main() {
     // Implementing Read
     // Implement a Route to Show Taskforces Records
     app.get("/taskforce", async function(req,res){
+        try {
         // this is the same as let members = req.query.members
         // syntax: object destructuring
         let { members } = req.query;
@@ -243,6 +253,11 @@ async function main() {
         res.render('taskforces/taskforces', {
             'employees': employees
         });
+
+    } catch (error) {
+        console.error("Error fetching taskforce record:", error);
+        res.status(statusCode_500_Internal_Server_Error);
+    }
     });
 
     //Contain-with Search
@@ -251,6 +266,8 @@ async function main() {
     // Implementing Read
     // Implement a Route to Show Supervisors Records
     app.get("/supervisor", async function(req,res){
+        try {
+
         // this is the same as let name = req.query.name;
         // syntax: object destructuring
         let { name } = req.query;
@@ -261,7 +278,7 @@ async function main() {
             criteria = "'%" + name + "%'";
         }
 
-        console.log(criteria);
+        // console.log(criteria);
 
         // Obtaining the Results with Normal Tables
         // let [employees] = await connection.execute(`
@@ -313,13 +330,19 @@ async function main() {
         res.render('supervisors/supervisors', {
             'employees': employees
         });
+    } catch (error) {
+        console.error("Error fetching supervisor record:", error);
+        res.status(statusCode_500_Internal_Server_Error);
+    }
     });
 
     // No Search for contact
-    
+
     // Implementing Read
     // Implement a Route to Show Contacts Records
     app.get("/contact", async function(req,res){
+        try {
+
         // With Ascending sorting
         let [employees] = await connection.execute('SELECT * FROM Employees INNER JOIN Contacts ON Employees.employee_id = Contacts.employee_id ORDER BY name ASC');
         
@@ -328,9 +351,15 @@ async function main() {
         res.render('contacts/contacts', {
             'employees': employees
         });
+    } catch (error) {
+        console.error("Error fetching contact record:", error);
+        res.status(statusCode_500_Internal_Server_Error);
+    }
     });
 
     app.post("/contact", async function(req,res){
+        try {
+
         let {employee_id_selected} = req.body;
         // With Ascending sorting
         let [employees] = await connection.execute('SELECT * FROM Employees INNER JOIN Contacts ON Employees.employee_id = Contacts.employee_id ORDER BY name ASC');
@@ -347,11 +376,16 @@ async function main() {
             'employee': employee,
             'relatedContact': relatedContact
         });
+    } catch (error) {
+        console.error("Error fetching contact record:", error);
+        res.status(statusCode_500_Internal_Server_Error);
+    }
     });
 
     // Implementing Read
     // Implement a Route to Show All Employees Records
     app.get('/employees', async (req, res) => {
+        try {
 
         // With Ascending sorting
         // Obtaining the Results with Nested Tables
@@ -405,11 +439,17 @@ async function main() {
         res.render('employees/index', {
             'employees': employees
         })
+    } catch (error) {
+        console.error("Error fetching employee record:", error);
+        res.status(statusCode_500_Internal_Server_Error);
+    }
     })
     
     // Implementing Create
     // Implement a Route to Show an Input Form
     app.get('/employees/create', async(req,res)=>{
+        try {
+
         let [supervisors] = await connection.execute('SELECT * from Supervisors');
         let [employees] = await connection.execute('SELECT * from Employees');
         let [employee_supervisor] = await connection.execute('SELECT * from EmployeeSupervisor');
@@ -418,11 +458,17 @@ async function main() {
             'employees': employees,
             'employee_supervisor': employee_supervisor
         })
+    } catch (error) {
+        console.error("Error fetching employee create form:", error);
+        res.status(statusCode_500_Internal_Server_Error);
+    }
     })
     
     // Implementing Create
     // Process the Create
     app.post('/employees/create', async(req,res)=>{
+        try {
+
         let {name, designation, department, date_joined, supervisor_name, employee_supervisor_ranking} = req.body;
         let query = 'INSERT INTO Employees (name, designation, department, date_joined) VALUES (?, ?, ?, ?)';
         let bindings = [name, designation, department, date_joined];
@@ -466,6 +512,10 @@ async function main() {
         await connection.execute(query3, bindings3);
     
         res.redirect('/employees');
+    } catch (e) {
+        console.error(e);
+        res.status(statusCode_500_Internal_Server_Error);
+    }
     })
     
     
@@ -474,7 +524,8 @@ async function main() {
     // Implementing Update
     // Implement a Route to Show an Edit Form
     app.get('/employees/:employee_id/edit', async (req, res) => {
-        
+        try {
+
         let [employees] = await connection.execute('SELECT * from Employees WHERE employee_id = ?', [req.params.employee_id]);
         let [employee_supervisors] = await connection.execute('SELECT * from EmployeeSupervisor WHERE employee_id = ?', [req.params.employee_id]);
     
@@ -519,11 +570,17 @@ async function main() {
             'supervisor': supervisor,
             'employee_supervisor': employee_supervisor
         })
+    } catch (error) {
+        console.error("Error fetching employee edit form:", error);
+        res.status(statusCode_500_Internal_Server_Error);
+    }
     });
     
     // Implementing Update
     // Process the Update
     app.post('/employees/:employee_id/edit', async (req, res) => {
+        try {
+
         let {name, designation, department, date_joined, supervisor_name, supervisor_ranking} = req.body;
     
         let query = 'UPDATE Employees SET name=?, designation=?, department=?, date_joined=? WHERE employee_id=?';
@@ -585,12 +642,18 @@ async function main() {
         }
         
         res.redirect('/employees');
+    } catch (e) {
+        console.error(e);
+        res.status(statusCode_500_Internal_Server_Error);
+    }
     });
     
     
     // Implementing Delete
     // Implement a Route to Show a Confirmation Form
     app.get('/employees/:employee_id/delete', async function(req,res){
+        try {
+
         // display a confirmation form 
         const [employees] = await connection.execute(
             "SELECT * FROM Employees WHERE employee_id =?", [req.params.employee_id]
@@ -600,15 +663,24 @@ async function main() {
         res.render('employees/delete', {
             employee
         })
-
+    } catch (error) {
+        console.error("Error fetching employee delete form:", error);
+        res.status(statusCode_500_Internal_Server_Error);
+    }
     })
 
     // Implementing Delete
     // Process the Delete
     app.post('/employees/:employee_id/delete', async function(req, res){
+        try {
+
         await connection.execute(`DELETE FROM EmployeeSupervisor WHERE employee_id = ?`, [req.params.employee_id]);
         await connection.execute(`DELETE FROM Employees WHERE employee_id = ?`, [req.params.employee_id]);
         res.redirect('/employees');
+    } catch (e) {
+        console.error(e);
+        res.status(statusCode_500_Internal_Server_Error);
+    }
     })
 
     app.listen(3000, ()=>{
