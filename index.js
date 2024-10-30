@@ -4,6 +4,8 @@ const wax = require('wax-on');
 require('dotenv').config();
 const { createConnection } = require('mysql2/promise');
 
+const port = 3000;
+
 // List of HTTP status codes Implemented
 const statusCode_200_OK = 200;
 const statusCode_201_Created = 201;
@@ -254,6 +256,11 @@ async function main() {
             'employees': employees
         });
 
+        // res.json({
+            // employees
+            // taskforce
+        // })
+
     } catch (error) {
         console.error("Error fetching taskforce record:", error);
         res.status(statusCode_500_Internal_Server_Error);
@@ -330,6 +337,11 @@ async function main() {
         res.render('supervisors/supervisors', {
             'employees': employees
         });
+
+        // res.json({
+            // 'supervisor': supervisor
+        // })
+
     } catch (error) {
         console.error("Error fetching supervisor record:", error);
         res.status(statusCode_500_Internal_Server_Error);
@@ -376,6 +388,11 @@ async function main() {
             'employee': employee,
             'relatedContact': relatedContact
         });
+
+        // res.json({
+            // contact
+        // })
+
     } catch (error) {
         console.error("Error fetching contact record:", error);
         res.status(statusCode_500_Internal_Server_Error);
@@ -439,6 +456,11 @@ async function main() {
         res.render('employees/index', {
             'employees': employees
         })
+
+        // res.json({
+            // 'employee': employee
+        // })
+
     } catch (error) {
         console.error("Error fetching employee record:", error);
         res.status(statusCode_500_Internal_Server_Error);
@@ -470,6 +492,14 @@ async function main() {
         try {
 
         let {name, designation, department, date_joined, supervisor_name, employee_supervisor_ranking} = req.body;
+
+        // basic validation: 
+        // make sure that name must be present
+        if (!name) {
+            return res.status(statusCode_400_Bad_Request)
+                .json({ "error": "The field(s) is incomplete: name, designation, department, date_joined, supervisor, ranking" })
+        }
+
         let query = 'INSERT INTO Employees (name, designation, department, date_joined) VALUES (?, ?, ?, ?)';
         let bindings = [name, designation, department, date_joined];
         let [result] = await connection.execute(query, bindings);
@@ -512,6 +542,12 @@ async function main() {
         await connection.execute(query3, bindings3);
     
         res.redirect('/employees');
+
+        // res.status(statusCode_201_Created).json({
+            // 'message': 'New employee has been created',
+            // 'newEmployeeId': result.insertedId // insertedId is the _id of the new record
+        // })
+
     } catch (e) {
         console.error(e);
         res.status(statusCode_500_Internal_Server_Error);
@@ -583,9 +619,16 @@ async function main() {
 
         let {name, designation, department, date_joined, supervisor_name, supervisor_ranking} = req.body;
     
+        // basic validation: 
+        // make sure that name must be present
+        if (!name) {
+            return res.status(statusCode_400_Bad_Request)
+                .json({ "error": "The field(s) is incomplete: name, designation, department, date_joined, supervisor, ranking" })
+        }
+
         let query = 'UPDATE Employees SET name=?, designation=?, department=?, date_joined=? WHERE employee_id=?';
         let bindings = [name, designation, department, date_joined, req.params.employee_id];
-        await connection.execute(query, bindings);
+        const result2 = await connection.execute(query, bindings);
     
 
         let [supervisors] = await connection.execute('SELECT * from Supervisors');
@@ -642,6 +685,18 @@ async function main() {
         }
         
         res.redirect('/employees');
+
+        // if there is no matches, means no update took place
+        // if (result2.matchedCount == 0) {
+            // return res.status(statusCode_404_Not_Found).json({
+                // "error": "Employee not found"
+            // })
+        // }
+
+        // res.status(statusCode_200_OK).json({
+            // "message": "Employee updated"
+        // })
+
     } catch (e) {
         console.error(e);
         res.status(statusCode_500_Internal_Server_Error);
@@ -675,16 +730,30 @@ async function main() {
         try {
 
         await connection.execute(`DELETE FROM EmployeeSupervisor WHERE employee_id = ?`, [req.params.employee_id]);
-        await connection.execute(`DELETE FROM Employees WHERE employee_id = ?`, [req.params.employee_id]);
+        const results = await connection.execute(`DELETE FROM Employees WHERE employee_id = ?`, [req.params.employee_id]);
         res.redirect('/employees');
+
+        // if (results.deletedCount == 0) {
+            // return res.status(statusCode_404_Not_Found).json({
+                // "error": "Employee not found"
+            // });
+        // }
+        
+        // res.json({
+            // "message": "Employee has been deleted successful"
+        // })
+
     } catch (e) {
         console.error(e);
         res.status(statusCode_500_Internal_Server_Error);
     }
     })
 
-    app.listen(3000, ()=>{
-        console.log('Server is running')
+    // 3. START SERVER (Don't put any routes after this line)
+    // app.listen(3000, function () {
+    // app.listen(3000, ()=>{
+    app.listen(port, function () {
+        console.log("Server is running at port:" + port);
     });
 }
 
